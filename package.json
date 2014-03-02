@@ -25,7 +25,8 @@
     "optimist": "0.6.x",
     "express": "3.4.8",
     "ejs": "*",
-    "stylus": "*"
+    "stylus": "*",
+    "coffee-script": "*"
   },
   "devDependencies": {
     "mocha": "1.x",

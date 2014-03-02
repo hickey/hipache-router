@@ -3,7 +3,12 @@
 fs      = require('fs')
 express = require 'express'
 redis   = require 'redis'
-csrf    = require 'csrf.js'
+#csrf    = require 'csrf.js'
+routes = require('../routes')
+user = require('../routes/user')
+test = require('../routes/test')
+http = require('http')
+path = require('path')
 
 rootDir = fs.realpathSync(__dirname + '/../')
 
@@ -11,65 +16,98 @@ app = express()
 
 
 
+
 ###
 Configuration
 ###
 
-app.dynamicHelpers({
-	csrf: csrf.token
-})
-app.dynamicHelpers({
-	flash: (req) ->
-		flash = req.flash()
-		return flash
-})
-app.dynamicHelpers({
-	current_user: (req) -> req.session.user
-})
+#app.dynamicHelpers
+#    csrf: csrf.token
+#    
+#app.dynamicHelpers
+#    flash: (req) -> 
+#        flash = req.flash()
+#        return flash
+#
+#app.dynamicHelpers
+#    current_user: (req) -> req.session.user
+#
 
-app.configure(() ->
-  app.set 'views', "#{__dirname}/views"
-  app.use express.logger()
-  app.use express.bodyDecoder()
-  app.use express.cookieDecoder()
-  app.use express.session({
-    store: new RedisStore({
-      maxAge: 24 * 60 * 60 * 1000 
-    })
-  })
-  app.use csrf.check()
-  app.use app.router
-  app.use express.methodOverride()
-  app.use express.staticProvider("#{__dirname}/public")
-)
+app.set('port', process.env.PORT || 3000)
+app.set('views', path.join(__dirname, '../views'))
+app.set('view engine', 'ejs')
+app.use(express.favicon())
+app.use(express.logger('dev'))
+app.use(express.json())
+app.use(express.urlencoded())
+app.use(express.methodOverride())
+app.use(express.cookieParser('your secret here'))
+app.use(express.session())
+app.use(app.router)
+app.use(require('stylus').middleware(path.join(__dirname, '../public')))
+app.use(express.static(path.join(__dirname, '../public')))
 
-app.configure 'development', () ->
-	app.use express.errorHandler({
-		dumpExceptions: true
-		showStack     : true
-	})
-	
-app.configure 'production', () ->
-	app.use express.errorHandler()
-    
-    
+# development only
+if 'development' == app.get('env')
+    app.use(express.errorHandler())
 
-###
-ROUTE: ROOT '/' (GET)
-###
-app.get '/', (req, res) ->
-	if req.session.user
-		req.flash 'success', "Authenticated as #{req.session.user.name}"
-		res.redirect '/dashboard'
 
-	res.render 'index.jade',
-		locals:
-			title: 'Home'
+app.get('/', routes.index)
+app.get('/users', user.list)
+app.get('/test', test.list)
+
+http.createServer(app).listen app.get('port'), () ->
+    console.log('Express server listening on port ' + app.get('port'))
 
 
 
 
-app.listen(2112)
 
 
 
+
+
+#app.configure ->
+#    app.set 'views', "#{__dirname}/views"
+#    app.use express.logger()
+#    app.use express.bodyDecoder()
+#    app.use express.cookieDecoder()
+#    app.use express.session
+#        store: new RedisStore
+#            maxAge: 24 * 60 * 60 * 1000 
+#
+#    #app.use csrf.check()
+#    app.use app.router
+#    app.use express.methodOverride()
+#    app.use express.staticProvider("#{__dirname}/public")
+#
+#
+#app.configure 'development', () ->
+#    app.use express.errorHandler
+#        dumpExceptions: true
+#        showStack     : true
+#
+#
+#app.configure 'production', () ->
+#    app.use express.errorHandler()
+#
+#
+#
+####
+#ROUTE: ROOT '/' (GET)
+####
+#app.get '/', (req, res) ->
+#    if req.session.user
+#        req.flash 'success', "Authenticated as #{req.session.user.name}"
+#        res.redirect '/dashboard'
+#
+#    res.render 'index.jade',
+#        locals:
+#            title: 'Home'
+#
+#
+#app.listen(2112)
+#
+#
+#
+#
