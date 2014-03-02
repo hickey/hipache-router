@@ -1,0 +1,75 @@
+#!/usr/bin/env coffee
+
+fs      = require('fs')
+express = require 'express'
+redis   = require 'redis'
+csrf    = require 'csrf.js'
+
+rootDir = fs.realpathSync(__dirname + '/../')
+
+app = express()
+
+
+
+###
+Configuration
+###
+
+app.dynamicHelpers({
+	csrf: csrf.token
+})
+app.dynamicHelpers({
+	flash: (req) ->
+		flash = req.flash()
+		return flash
+})
+app.dynamicHelpers({
+	current_user: (req) -> req.session.user
+})
+
+app.configure(() ->
+  app.set 'views', "#{__dirname}/views"
+  app.use express.logger()
+  app.use express.bodyDecoder()
+  app.use express.cookieDecoder()
+  app.use express.session({
+    store: new RedisStore({
+      maxAge: 24 * 60 * 60 * 1000 
+    })
+  })
+  app.use csrf.check()
+  app.use app.router
+  app.use express.methodOverride()
+  app.use express.staticProvider("#{__dirname}/public")
+)
+
+app.configure 'development', () ->
+	app.use express.errorHandler({
+		dumpExceptions: true
+		showStack     : true
+	})
+	
+app.configure 'production', () ->
+	app.use express.errorHandler()
+    
+    
+
+###
+ROUTE: ROOT '/' (GET)
+###
+app.get '/', (req, res) ->
+	if req.session.user
+		req.flash 'success', "Authenticated as #{req.session.user.name}"
+		res.redirect '/dashboard'
+
+	res.render 'index.jade',
+		locals:
+			title: 'Home'
+
+
+
+
+app.listen(2112)
+
+
+
