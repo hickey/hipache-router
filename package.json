@@ -24,7 +24,7 @@
     "lru-cache": "2.5.x",
     "optimist": "0.6.x",
     "express": "3.4.8",
-    "ejs": "*",
+    "hamljs": "*",
     "stylus": "*",
     "coffee-script": "*"
   },
